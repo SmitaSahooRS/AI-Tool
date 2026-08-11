@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Test Case Generator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface-2: #f0f1f4;
+    --border: #e2e4e9;
+    --border-strong: #cdd0d9;
+    --text: #111318;
+    --text-2: #4b5063;
+    --text-3: #8b90a0;
+    --accent: #2563eb;
+    --accent-bg: #eff4ff;
+    --accent-text: #1d4ed8;
+    --success: #16a34a;
+    --success-bg: #f0fdf4;
+    --success-text: #15803d;
+    --danger: #dc2626;
+    --danger-bg: #fef2f2;
+    --danger-text: #b91c1c;
+    --warning: #d97706;
+    --warning-bg: #fffbeb;
+    --warning-text: #b45309;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ── Layout ── */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  .topbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .topbar-logo svg { width: 24px; height: 24px; }
+  .topbar-divider { flex: 1; }
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: var(--accent-bg);
+    color: var(--accent-text);
+    letter-spacing: 0.02em;
+  }
+
+  .main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-3);
+    cursor: pointer;
+    border: none;
+    background: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tab:hover { color: var(--text-2); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-count {
+    background: var(--surface-2);
+    color: var(--text-3);
+    border-radius: 20px;
+    font-size: 11px;
+    padding: 1px 7px;
+    font-weight: 600;
+  }
+  .tab.active .tab-count { background: var(--accent-bg); color: var(--accent-text); }
+
+  /* ── Card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+
+  /* ── Form ── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin-top: 16px;
+  }
+  @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-2);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  textarea, select, input[type="text"] {
+    width: 100%;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 9px 12px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none;
+  }
+  textarea { min-height: 110px; resize: vertical; }
+  textarea:focus, select:focus, input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+  }
+  textarea::placeholder, input::placeholder { color: var(--text-3); }
+  select { height: 38px; cursor: pointer; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b90a0' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center; padding-right: 32px; }
+
+  .section-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-2);
+    margin-bottom: 8px;
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 0 18px; height: 40px; border-radius: var(--radius);
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    border: none; font-family: inherit; transition: opacity 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-ghost { background: var(--surface); color: var(--text-2); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--surface-2); }
+  .btn-sm { height: 32px; padding: 0 12px; font-size: 13px; font-weight: 500; }
+
+  .spinner {
+    width: 15px; height: 15px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  .loading .spinner { display: block; }
+  .loading .btn-label { opacity: 0.7; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .actions-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .actions-right { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* ── Stats row ── */
+  .stats-row {
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .stat-pill {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface-2);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 13px;
+    color: var(--text-2);
+  }
+  .stat-pill strong { color: var(--text); }
+  .stat-pill.pos { background: var(--success-bg); color: var(--success-text); }
+  .stat-pill.neg { background: var(--danger-bg); color: var(--danger-text); }
+  .stat-pill.edge { background: var(--warning-bg); color: var(--warning-text); }
+
+  /* ── Test case card ── */
+  .tc-list { display: flex; flex-direction: column; gap: 12px; }
+  .tc-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.15s;
+  }
+  .tc-card:hover { box-shadow: var(--shadow-md); }
+  .tc-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 16px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .tc-id { font-size: 11px; font-weight: 700; color: var(--text-3); font-family: monospace; }
+  .type-badge {
+    font-size: 11px; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .type-badge.positive { background: var(--success-bg); color: var(--success-text); }
+  .type-badge.negative { background: var(--danger-bg); color: var(--danger-text); }
+  .type-badge.edge { background: var(--warning-bg); color: var(--warning-text); }
+  .tc-title-text { flex: 1; font-size: 14px; font-weight: 600; color: var(--text); }
+  .tc-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+  .tc-section {}
+  .tc-section-label {
+    font-size: 11px; font-weight: 700;
+    color: var(--text-3); text-transform: uppercase;
+    letter-spacing: 0.05em; margin-bottom: 4px;
+  }
+  .tc-section-text { font-size: 14px; color: var(--text-2); line-height: 1.6; }
+  .tc-steps-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+  .tc-steps-list li {
+    font-size: 14px; color: var(--text-2); line-height: 1.6;
+    padding-left: 22px; position: relative;
+  }
+  .tc-steps-list li::before {
+    content: counter(step);
+    counter-increment: step;
+    position: absolute; left: 0;
+    font-size: 11px; font-weight: 700;
+    color: var(--text-3);
+    top: 3px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tc-steps-wrap { counter-reset: step; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--text); color: #fff;
+    padding: 10px 16px; border-radius: var(--radius);
+    font-size: 13px; font-weight: 500;
+    opacity: 0; transform: translateY(8px);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none; z-index: 9999;
+    box-shadow: var(--shadow-md);
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ── Empty / Error ── */
+  .empty {
+    text-align: center; padding: 48px 20px;
+    color: var(--text-3); font-size: 14px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+  .empty svg { opacity: 0.3; }
+  .error-banner {
+    background: var(--danger-bg);
+    border: 1px solid #fecaca;
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    color: var(--danger-text);
+    font-size: 13px;
+  }
+
+  /* ── History ── */
+  .history-list { display: flex; flex-direction: column; gap: 10px; }
+  .history-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+    display: flex; flex-direction: column; gap: 6px;
+    cursor: pointer;
+    transition: box-shadow 0.15s;
+  }
+  .history-item:hover { box-shadow: var(--shadow-md); }
+  .history-item-top { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+  .history-time { font-size: 12px; color: var(--text-3); white-space: nowrap; }
+  .history-feature { font-size: 13px; color: var(--text-2); line-height: 1.5; }
+  .history-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* ── Settings ── */
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 500px) { .settings-grid { grid-template-columns: 1fr; } }
+  .api-key-row { display: flex; gap: 8px; align-items: flex-end; }
+  .api-key-row .field { flex: 1; }
+  .help-text { font-size: 12px; color: var(--text-3); margin-top: 5px; line-height: 1.5; }
+  .help-text a { color: var(--accent); text-decoration: none; }
+  .help-text a:hover { text-decoration: underline; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+
+  /* ── Page toggle ── */
+  .page { display: none; }
+  .page.active { display: flex; flex-direction: column; gap: 20px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="topbar-logo" href="#">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/>
+    </svg>
+    TestGen AI
+  </a>
+  <div class="topbar-divider"></div>
+  <span class="badge">QA Portfolio Project</span>
+</div>
+
+<div class="main">
+  <div class="tabs">
+    <button class="tab active" onclick="showPage('generate')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Generate
+    </button>
+    <button class="tab" onclick="showPage('history')" id="history-tab">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      History
+      <span class="tab-count" id="history-count">0</span>
+    </button>
+    <button class="tab" onclick="showPage('settings')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </button>
+  </div>
+
+  <!-- ── Generate page ── -->
+  <div class="page active" id="page-generate">
+    <div class="card">
+      <div class="section-label">Feature or user story</div>
+      <textarea id="feature-input" placeholder="e.g. As a user, I want to reset my password by entering my email address and receiving a reset link within 5 minutes. The link should expire after 24 hours."></textarea>
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="format-select">Output format</label>
+          <select id="format-select">
+            <option value="structured">Given / When / Then</option>
+            <option value="steps">Step-by-step</option>
+            <option value="gherkin">Gherkin / BDD</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="count-select">Number of cases</label>
+          <select id="count-select">
+            <option value="4">4 test cases</option>
+            <option value="6" selected>6 test cases</option>
+            <option value="8">8 test cases</option>
+            <option value="10">10 test cases</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="type-select">Types to include</label>
+          <select id="type-select">
+            <option value="all">All (positive, negative, edge)</option>
+            <option value="positive">Positive only</option>
+            <option value="negative">Negative only</option>
+            <option value="edge">Edge cases only</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="actions-row">
+        <button class="btn btn-primary" id="gen-btn" onclick="generateTests()">
+          <div class="spinner"></div>
+          <span class="btn-label">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Generate test cases
+          </span>
+        </button>
+        <div class="actions-right" id="export-actions" style="display:none">
+          <button class="btn btn-ghost btn-sm" onclick="downloadCSV()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="copyJira()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy for Jira
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="copyAll()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy all
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="error-area"></div>
+    <div id="stats-area"></div>
+    <div id="results-area">
+      <div class="empty">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
+        <span>Generated test cases will appear here</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── History page ── -->
+  <div class="page" id="page-history">
+    <div class="card">
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px">
+        <div class="section-label" style="margin:0">Generation history</div>
+        <button class="btn btn-ghost btn-sm" onclick="clearHistory()">Clear history</button>
+      </div>
+    </div>
+    <div id="history-list-area">
+      <div class="empty">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>No history yet — generate some test cases first</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Settings page ── -->
+  <div class="page" id="page-settings">
+    <div class="card">
+      <div class="section-label">API configuration</div>
+      <hr class="divider">
+      <div class="api-key-row">
+        <div class="field">
+          <label for="api-key-input">Anthropic API key</label>
+          <input type="password" id="api-key-input" placeholder="sk-ant-..." />
+          <div class="help-text">
+            Your key is stored only in your browser's localStorage and is never sent anywhere except directly to the Anthropic API.
+            Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>.
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="margin-bottom:26px" onclick="saveApiKey()">Save</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-label">About this project</div>
+      <hr class="divider">
+      <div style="font-size:14px; color:var(--text-2); line-height:1.7; display:flex; flex-direction:column; gap:10px">
+        <p><strong>TestGen AI</strong> is a portfolio project demonstrating AI integration for QA engineers. It uses the Claude API to generate structured test cases from natural language feature descriptions.</p>
+        <p><strong>Key techniques used:</strong></p>
+        <ul style="padding-left:18px; display:flex; flex-direction:column; gap:4px">
+          <li>Prompt engineering with strict JSON schema enforcement</li>
+          <li>Multi-format output (Gherkin, step-by-step, structured)</li>
+          <li>Client-side state management and localStorage persistence</li>
+          <li>CSV export and clipboard integration</li>
+          <li>API key management with browser-local storage</li>
+        </ul>
+        <p style="font-size:13px; color:var(--text-3)">Built with vanilla HTML/CSS/JS + Anthropic API. No frameworks, no backend.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── State ──
+let testCases = [];
+let history = JSON.parse(localStorage.getItem('tcgen-history') || '[]');
+
+// ── Page nav ──
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'history') renderHistory();
+  if (name === 'settings') loadSettings();
+}
+
+// ── Settings ──
+function loadSettings() {
+  const key = localStorage.getItem('tcgen-api-key') || '';
+  document.getElementById('api-key-input').value = key;
+}
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  localStorage.setItem('tcgen-api-key', key);
+  showToast('API key saved');
+}
+
+// ── Generate ──
+async function generateTests() {
+  const feature = document.getElementById('feature-input').value.trim();
+  if (!feature) { showError('Enter a feature description first.'); return; }
+
+  const format = document.getElementById('format-select').value;
+  const count = parseInt(document.getElementById('count-select').value);
+  const types = document.getElementById('type-select').value;
+
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true; btn.classList.add('loading');
+  document.getElementById('error-area').innerHTML = '';
+  document.getElementById('export-actions').style.display = 'none';
+  document.getElementById('stats-area').innerHTML = '';
+  document.getElementById('results-area').innerHTML = `
+    <div class="empty">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+      <span>Generating test cases…</span>
+    </div>`;
+
+  const typeInstruction =
+    types === 'all' ? 'positive (happy path), negative (error/failure scenarios), and edge cases (boundary conditions)' :
+    types === 'positive' ? 'positive (happy path) scenarios only' :
+    types === 'negative' ? 'negative (error/failure) scenarios only' :
+    'edge cases and boundary conditions only';
+
+  const formatInstruction =
+    format === 'gherkin'
+      ? 'Write each step in Gherkin style starting with Given, When, Then, And, or But.'
+      : format === 'structured'
+      ? 'Use a clear Given/When/Then structure in the steps array.'
+      : 'Use clear numbered action steps (imperative verb, e.g. "Click the submit button").';
+
+  const prompt = `You are a senior QA engineer. Generate exactly ${count} test cases for this feature.
+
+Feature: ${feature}
+
+Rules:
+- Include ${typeInstruction}
+- ${formatInstruction}
+- Respond ONLY with a valid JSON array. No markdown, no backticks, no commentary.
+- Each object must have these exact keys: title, type, precondition, steps, expected
+- "type" must be one of: positive, negative, edge
+- "steps" must be an array of strings
+
+Example of one object:
+{"title":"Valid login with correct credentials","type":"positive","precondition":"User is registered and on the login page","steps":["Enter valid email address","Enter correct password","Click Login button"],"expected":"User is redirected to dashboard and sees welcome message"}`;
+
+  try {
+    const apiKey = localStorage.getItem('tcgen-api-key') || '';
+    const headers = { 'Content-Type': 'application/json' };
+    if (apiKey) headers['x-api-key'] = apiKey;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `API error ${res.status}`);
+    }
+
+    const data = await res.json();
+    const raw = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    const clean = raw.replace(/```json|```/g, '').trim();
+    testCases = JSON.parse(clean);
+    if (!Array.isArray(testCases)) throw new Error('Response was not an array.');
+
+    renderResults();
+    saveToHistory(feature, testCases, format, types);
+
+  } catch (e) {
+    showError(e.message || 'Something went wrong. Try again.');
+    document.getElementById('results-area').innerHTML = '';
+  } finally {
+    btn.disabled = false; btn.classList.remove('loading');
+  }
+}
+
+function renderResults() {
+  const pos = testCases.filter(t => t.type === 'positive').length;
+  const neg = testCases.filter(t => t.type === 'negative').length;
+  const edge = testCases.filter(t => t.type === 'edge').length;
+
+  document.getElementById('stats-area').innerHTML = `
+    <div class="stats-row">
+      <div class="stat-pill"><strong>${testCases.length}</strong> test cases</div>
+      ${pos ? `<div class="stat-pill pos"><strong>${pos}</strong> positive</div>` : ''}
+      ${neg ? `<div class="stat-pill neg"><strong>${neg}</strong> negative</div>` : ''}
+      ${edge ? `<div class="stat-pill edge"><strong>${edge}</strong> edge</div>` : ''}
+    </div>`;
+
+  document.getElementById('export-actions').style.display = 'flex';
+
+  const html = `<div class="tc-list">${testCases.map((tc, i) => {
+    const typeClass = tc.type === 'positive' ? 'positive' : tc.type === 'negative' ? 'negative' : 'edge';
+    const typeLabel = tc.type === 'positive' ? 'Positive' : tc.type === 'negative' ? 'Negative' : 'Edge case';
+    const steps = (tc.steps || []).map(s => `<li>${esc(s)}</li>`).join('');
+    return `<div class="tc-card">
+      <div class="tc-head">
+        <span class="tc-id">TC-${String(i+1).padStart(2,'0')}</span>
+        <span class="type-badge ${typeClass}">${typeLabel}</span>
+        <span class="tc-title-text">${esc(tc.title)}</span>
+        <button class="btn btn-ghost btn-sm" onclick="copyCase(${i})" style="margin-left:auto">Copy</button>
+      </div>
+      <div class="tc-body">
+        <div class="tc-section">
+          <div class="tc-section-label">Precondition</div>
+          <div class="tc-section-text">${esc(tc.precondition)}</div>
+        </div>
+        <div class="tc-section">
+          <div class="tc-section-label">Steps</div>
+          <div class="tc-steps-wrap"><ol class="tc-steps-list">${steps}</ol></div>
+        </div>
+        <div class="tc-section">
+          <div class="tc-section-label">Expected result</div>
+          <div class="tc-section-text">${esc(tc.expected)}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+
+  document.getElementById('results-area').innerHTML = html;
+}
+
+// ── Export ──
+function copyCase(i) {
+  const tc = testCases[i];
+  const text = `[TC-${String(i+1).padStart(2,'0')}] [${tc.type.toUpperCase()}] ${tc.title}\n\nPrecondition: ${tc.precondition}\n\nSteps:\n${(tc.steps||[]).map((s,j)=>`${j+1}. ${s}`).join('\n')}\n\nExpected result: ${tc.expected}`;
+  navigator.clipboard.writeText(text);
+  showToast('Copied to clipboard');
+}
+
+function copyAll() {
+  const text = testCases.map((tc, i) =>
+    `TC-${String(i+1).padStart(2,'0')} [${tc.type.toUpperCase()}] ${tc.title}\nPrecondition: ${tc.precondition}\nSteps:\n${(tc.steps||[]).map((s,j)=>`  ${j+1}. ${s}`).join('\n')}\nExpected: ${tc.expected}`
+  ).join('\n\n---\n\n');
+  navigator.clipboard.writeText(text);
+  showToast('All test cases copied');
+}
+
+function copyJira() {
+  const lines = testCases.map((tc, i) => {
+    const steps = (tc.steps||[]).map((s,j) => `# ${j+1}. ${s}`).join('\n');
+    return `h3. TC-${String(i+1).padStart(2,'0')} — ${tc.title}\n*Type:* ${tc.type} | *Precondition:* ${tc.precondition}\n\n*Steps:*\n${steps}\n\n*Expected:* ${tc.expected}`;
+  }).join('\n\n----\n\n');
+  navigator.clipboard.writeText(lines);
+  showToast('Jira-formatted text copied');
+}
+
+function downloadCSV() {
+  const feature = document.getElementById('feature-input').value.trim();
+  const header = ['ID','Type','Title','Precondition','Steps','Expected Result'];
+  const rows = testCases.map((tc, i) => [
+    `TC-${String(i+1).padStart(2,'0')}`,
+    tc.type,
+    tc.title,
+    tc.precondition,
+    (tc.steps||[]).join(' | '),
+    tc.expected
+  ]);
+  const csvContent = [header, ...rows]
+    .map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(','))
+    .join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `test-cases-${Date.now()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV downloaded');
+}
+
+// ── History ──
+function saveToHistory(feature, cases, format, types) {
+  const entry = {
+    id: Date.now(),
+    timestamp: new Date().toISOString(),
+    feature: feature.slice(0, 140),
+    count: cases.length,
+    pos: cases.filter(t => t.type === 'positive').length,
+    neg: cases.filter(t => t.type === 'negative').length,
+    edge: cases.filter(t => t.type === 'edge').length,
+    format, types,
+    cases
+  };
+  history.unshift(entry);
+  if (history.length > 20) history = history.slice(0, 20);
+  localStorage.setItem('tcgen-history', JSON.stringify(history));
+  document.getElementById('history-count').textContent = history.length;
+}
+
+function renderHistory() {
+  const area = document.getElementById('history-list-area');
+  if (!history.length) {
+    area.innerHTML = `<div class="empty">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>No history yet — generate some test cases first</span>
+    </div>`;
+    return;
+  }
+  area.innerHTML = `<div class="history-list">${history.map(h => {
+    const d = new Date(h.timestamp);
+    const time = d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="history-item" onclick="restoreHistory('${h.id}')">
+      <div class="history-item-top">
+        <div class="history-badges">
+          <span class="stat-pill" style="font-size:12px"><strong>${h.count}</strong> cases</span>
+          ${h.pos ? `<span class="stat-pill pos" style="font-size:12px">${h.pos} pos</span>` : ''}
+          ${h.neg ? `<span class="stat-pill neg" style="font-size:12px">${h.neg} neg</span>` : ''}
+          ${h.edge ? `<span class="stat-pill edge" style="font-size:12px">${h.edge} edge</span>` : ''}
+        </div>
+        <span class="history-time">${time}</span>
+      </div>
+      <div class="history-feature">${esc(h.feature)}${h.feature.length === 140 ? '…' : ''}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function restoreHistory(id) {
+  const entry = history.find(h => String(h.id) === String(id));
+  if (!entry) return;
+  testCases = entry.cases;
+  document.getElementById('feature-input').value = entry.feature;
+  document.getElementById('format-select').value = entry.format;
+  document.getElementById('type-select').value = entry.types;
+
+  showPage('generate');
+  document.querySelectorAll('.tab')[0].classList.add('active');
+  document.querySelectorAll('.tab')[1].classList.remove('active');
+  document.querySelectorAll('.tab')[2].classList.remove('active');
+
+  renderResults();
+  showToast('Session restored');
+}
+
+function clearHistory() {
+  if (!confirm('Clear all history?')) return;
+  history = [];
+  localStorage.setItem('tcgen-history', '[]');
+  document.getElementById('history-count').textContent = '0';
+  renderHistory();
+}
+
+// ── Helpers ──
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function showError(msg) {
+  document.getElementById('error-area').innerHTML = `<div class="error-banner">${esc(msg)}</div>`;
+}
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ── Init ──
+document.getElementById('history-count').textContent = history.length;
+loadSettings();
+</script>
+</body>
+</html>
